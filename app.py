@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify
+import os
 
 app = Flask(__name__)
 
 # Sample pantry and recipes
-pantry = {"butter", "cheese", "pork loin"}
+pantry = {"butter", "cheese", "pork loin", "eggs"}
 recipes = {
     "Grilled Cheese": {"bread", "cheese", "butter"},
     "Omelette": {"eggs", "milk", "cheese"},
     "Pork Stir Fry": {"pork loin", "soy sauce", "garlic"},
-    "Mac and Cheese": {"pasta", "cheese", "butter"},
     "Smoothie": {"banana", "milk", "yogurt"}
 }
 
@@ -33,12 +33,10 @@ def dialogflow_webhook():
             reply = "🍽️ You could make: " + "; ".join(suggestions)
         else:
             reply = "🤔 I couldn't find a recipe with your current ingredients."
+    else:
+        reply = "Sorry, I didn't understand that intent."
 
-        return jsonify({"fulfillmentText": reply})
-
-    return jsonify({"fulfillmentText": "Sorry, I couldn't process your request."})
-
-import os
+    return jsonify({"fulfillmentText": reply})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

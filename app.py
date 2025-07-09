@@ -3,12 +3,15 @@ import os
 
 app = Flask(__name__)
 
-# Sample pantry and recipes
+# In-memory pantry (add/remove in routes)
 pantry = {"butter", "cheese", "pork loin", "eggs"}
+
+# Sample recipe database
 recipes = {
     "Grilled Cheese": {"bread", "cheese", "butter"},
     "Omelette": {"eggs", "milk", "cheese"},
     "Pork Stir Fry": {"pork loin", "soy sauce", "garlic"},
+    "Mac and Cheese": {"pasta", "cheese", "butter"},
     "Smoothie": {"banana", "milk", "yogurt"}
 }
 
@@ -16,28 +19,36 @@ recipes = {
 def home():
     return "✅ KitchenBot is live on Render!"
 
-@app.route("/dialogflow", methods=["POST"])
-def dialogflow_webhook():
+# ✅ Add item to pantry
+@app.route("/add_item", methods=["POST"])
+def add_item():
     data = request.get_json()
-    intent = data["queryResult"]["intent"]["displayName"]
+    item = data.get("item", "").strip().lower()
+    if item:
+        pantry.add(item)
+        return jsonify({"message": f"✅ {item} added to pantry", "pantry": list(pantry)})
+    return jsonify({"error": "No item provided"}), 400
 
-    if intent == "SuggestRecipe":
-        suggestions = []
-        for name, ingredients in recipes.items():
-            match = pantry.intersection(ingredients)
-            score = len(match) / len(ingredients)
-            if score >= 0.5:
-                suggestions.append(f"{name} (you have {len(match)}/{len(ingredients)} ingredients)")
+# ✅ Suggest recipes based on current pantry
+@app.route("/recipe_suggest", methods=["GET", "POST"])
+def recipe_suggest():
+    suggestions = []
+    for name, ingredients in recipes.items():
+        match = pantry.intersection(ingredients)
+        score = len(match) / len(ingredients)
+        if score >= 0.5:
+            suggestions.append(f"{name} (you have {len(match)}/{len(ingredients)} ingredients)")
 
-        if suggestions:
-            reply = "🍽️ You could make: " + "; ".join(suggestions)
-        else:
-            reply = "🤔 I couldn't find a recipe with your current ingredients."
+    if suggestions:
+        reply = "🍽️ You could make: " + "; ".join(suggestions)
     else:
-        reply = "Sorry, I didn't understand that intent."
+        reply = "🤔 I couldn't find a recipe with your current ingredients."
 
-    return jsonify({"fulfillmentText": reply})
+    return jsonify({ "message": reply })
 
+# ✅ Optional future routes: /remove_item, /get_pantry, etc.
+
+# Flask port config for Render
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

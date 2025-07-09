@@ -38,5 +38,8 @@ def dialogflow_webhook():
 
     return jsonify({"fulfillmentText": "Sorry, I couldn't process your request."})
 
+import os
+
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
